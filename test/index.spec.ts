@@ -1,29 +1,45 @@
-import {
-	env,
-	createExecutionContext,
-	waitOnExecutionContext,
-	SELF,
-} from "cloudflare:test";
-import { describe, it, expect } from "vitest";
-import worker from "../src/index";
+import { SELF } from 'cloudflare:test';
+import { describe, it, expect } from 'vitest';
 
-// For now, you'll need to do something like this to get a correctly-typed
-// `Request` to pass to `worker.fetch()`.
-const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
-
-describe("Hello World worker", () => {
-	it("responds with Hello World! (unit style)", async () => {
-		const request = new IncomingRequest("http://example.com");
-		// Create an empty context to pass to `worker.fetch()`.
-		const ctx = createExecutionContext();
-		const response = await worker.fetch(request, env, ctx);
-		// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-		await waitOnExecutionContext(ctx);
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+describe('/contact', () => {
+	it('returns 200 with { ok: true }', async () => {
+		const res = await SELF.fetch('https://example.com/contact', { method: 'POST' });
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ ok: true });
 	});
 
-	it("responds with Hello World! (integration style)", async () => {
-		const response = await SELF.fetch("https://example.com");
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+	it('returns 405 with Allow: POST for non-POST methods', async () => {
+		const res = await SELF.fetch('https://example.com/contact');
+		expect(res.status).toBe(405);
+		expect(res.headers.get('Allow')).toBe('POST');
+		expect(await res.json()).toEqual({ ok: false, error: 'method_not_allowed' });
+	});
+});
+
+describe('/telegram', () => {
+	it('returns 200 with { ok: true }', async () => {
+		const res = await SELF.fetch('https://example.com/telegram', { method: 'POST' });
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ ok: true });
+	});
+
+	it('returns 405 with Allow: POST for non-POST methods', async () => {
+		const res = await SELF.fetch('https://example.com/telegram');
+		expect(res.status).toBe(405);
+		expect(res.headers.get('Allow')).toBe('POST');
+		expect(await res.json()).toEqual({ ok: false, error: 'method_not_allowed' });
+	});
+});
+
+describe('unknown routes', () => {
+	it('returns 404 with not_found error', async () => {
+		const res = await SELF.fetch('https://example.com/not-found');
+		expect(res.status).toBe(404);
+		expect(await res.json()).toEqual({ ok: false, error: 'not_found' });
+	});
+
+	it('returns 404 for /contact/ with trailing slash', async () => {
+		const res = await SELF.fetch('https://example.com/contact/', { method: 'POST' });
+		expect(res.status).toBe(404);
 	});
 });
