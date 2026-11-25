@@ -1,9 +1,15 @@
+import { parseContact } from './contact';
+
 function methodNotAllowed(allowed: string): Response {
 	return Response.json({ ok: false, error: 'method_not_allowed' }, { status: 405, headers: { Allow: allowed } });
 }
 
 function notFound(): Response {
 	return Response.json({ ok: false, error: 'not_found' }, { status: 404 });
+}
+
+function invalid(): Response {
+	return Response.json({ ok: false, error: 'invalid' }, { status: 400 });
 }
 
 export default {
@@ -14,6 +20,14 @@ export default {
 			if (request.method !== 'POST') {
 				return methodNotAllowed('POST');
 			}
+			let body: unknown;
+			try {
+				body = await request.json();
+			} catch {
+				return invalid();
+			}
+			const contact = parseContact(body);
+			if (contact === null) return invalid();
 			return Response.json({ ok: true });
 		}
 
