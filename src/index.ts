@@ -12,23 +12,45 @@ function invalid(): Response {
 	return Response.json({ ok: false, error: 'invalid' }, { status: 400 });
 }
 
+function preflight(origin: string): Response {
+	return new Response(null, {
+		status: 204,
+		headers: {
+			'Access-Control-Allow-Origin': origin,
+			'Access-Control-Allow-Methods': 'POST',
+			'Access-Control-Allow-Headers': 'Content-Type',
+			'Access-Control-Max-Age': '7200',
+		},
+	});
+}
+
+function withCors(response: Response, origin: string): Response {
+	response.headers.set('Access-Control-Allow-Origin', origin);
+	return response;
+}
+
+async function handleContact(request: Request): Promise<Response> {
+	if (request.method !== 'POST') {
+		return methodNotAllowed('POST, OPTIONS');
+	}
+	let body: unknown;
+	try {
+		body = await request.json();
+	} catch {
+		return invalid();
+	}
+	const contact = parseContact(body);
+	if (contact === null) return invalid();
+	return Response.json({ ok: true });
+}
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		const { pathname } = new URL(request.url);
 
 		if (pathname === '/contact') {
-			if (request.method !== 'POST') {
-				return methodNotAllowed('POST');
-			}
-			let body: unknown;
-			try {
-				body = await request.json();
-			} catch {
-				return invalid();
-			}
-			const contact = parseContact(body);
-			if (contact === null) return invalid();
-			return Response.json({ ok: true });
+			if (request.method === 'OPTIONS') return preflight(env.ALLOWED_ORIGIN);
+			return withCors(await handleContact(request), env.ALLOWED_ORIGIN);
 		}
 
 		if (pathname === '/telegram') {
