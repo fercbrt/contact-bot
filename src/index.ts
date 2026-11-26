@@ -1,4 +1,5 @@
 import { parseContact } from './contact';
+import { formatContact, sendMessage } from './telegram';
 
 function methodNotAllowed(allowed: string): Response {
 	return Response.json({ ok: false, error: 'method_not_allowed' }, { status: 405, headers: { Allow: allowed } });
@@ -10,6 +11,10 @@ function notFound(): Response {
 
 function invalid(): Response {
 	return Response.json({ ok: false, error: 'invalid' }, { status: 400 });
+}
+
+function deliveryFailed(): Response {
+	return Response.json({ ok: false, error: 'delivery_failed'}, { status: 502} )
 }
 
 function preflight(origin: string): Response {
@@ -29,7 +34,7 @@ function withCors(response: Response, origin: string): Response {
 	return response;
 }
 
-async function handleContact(request: Request): Promise<Response> {
+async function handleContact(request: Request, env: Env): Promise<Response> {
 	if (request.method !== 'POST') {
 		return methodNotAllowed('POST, OPTIONS');
 	}
@@ -43,6 +48,12 @@ async function handleContact(request: Request): Promise<Response> {
 	}
 	const contact = parseContact(body);
 	if (contact === null) return invalid();
+	try {
+        await sendMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, formatContact(contact));
+	} catch (error) {
+			console.error(error);
+			return deliveryFailed();
+	}
 	return Response.json({ ok: true });
 }
 
@@ -52,7 +63,7 @@ export default {
 
 		if (pathname === '/contact') {
 			if (request.method === 'OPTIONS') return preflight(env.ALLOWED_ORIGIN);
-			return withCors(await handleContact(request), env.ALLOWED_ORIGIN);
+			return withCors(await handleContact(request, env), env.ALLOWED_ORIGIN);
 		}
 
 		if (pathname === '/telegram') {
