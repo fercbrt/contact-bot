@@ -2,10 +2,11 @@ import { env, SELF } from 'cloudflare:test';
 import { describe, it, expect } from 'vitest';
 
 const validContact = { name: 'Ana', email: 'ana@example.com', message: 'Hello there' };
+const jsonHeaders = { 'Content-Type': 'application/json' };
 
 describe('/contact', () => {
 	it('returns 200 with { ok: true }', async () => {
-		const res = await SELF.fetch('https://example.com/contact', { method: 'POST', body: JSON.stringify(validContact) });
+		const res = await SELF.fetch('https://example.com/contact', { method: 'POST', body: JSON.stringify(validContact), headers: jsonHeaders });
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ ok: true });
 	});
@@ -18,7 +19,7 @@ describe('/contact', () => {
 	});
 
 	it('returns 400 invalid when the body is not JSON', async () => {
-		const res = await SELF.fetch('https://example.com/contact', { method: 'POST', body: 'not json' });
+		const res = await SELF.fetch('https://example.com/contact', { method: 'POST', body: 'not json', headers: jsonHeaders } );
 		expect(res.status).toBe(400);
 		expect(await res.json()).toEqual({ ok: false, error: 'invalid' });
 	});
@@ -27,9 +28,29 @@ describe('/contact', () => {
 		const res = await SELF.fetch('https://example.com/contact', {
 			method: 'POST',
 			body: JSON.stringify({ ...validContact, email: 'no email' }),
+			headers: jsonHeaders
 		});
 		expect(res.status).toBe(400);
 		expect(await res.json()).toEqual({ ok: false, error: 'invalid' });
+	});
+
+	it('returns 400 invalid when Content-Type is text/plain', async () => {
+        const res = await SELF.fetch('https://example.com/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(validContact),
+        });
+        expect(res.status).toBe(400);
+        expect(await res.json()).toEqual({ ok: false, error: 'invalid' });
+	});
+
+	it('returns 400 invalid when Content-Type is not set', async () => {
+			const res = await SELF.fetch('https://example.com/contact', {
+					method: 'POST',
+					body: JSON.stringify(validContact),
+			});
+			expect(res.status).toBe(400);
+			expect(await res.json()).toEqual({ ok: false, error: 'invalid' });
 	});
 });
 
@@ -47,13 +68,14 @@ describe('/contact CORS', () => {
 		const res = await SELF.fetch('https://example.com/contact', {
 			method: 'POST',
 			body: JSON.stringify(validContact),
+			headers: jsonHeaders
 		});
 		expect(res.status).toBe(200);
 		expect(res.headers.get('Access-Control-Allow-Origin')).toBe(env.ALLOWED_ORIGIN);
 	});
 
 	it('adds the allowed origin to a 400 response', async () => {
-		const res = await SELF.fetch('https://example.com/contact', { method: 'POST', body: 'not json' });
+		const res = await SELF.fetch('https://example.com/contact', { method: 'POST', body: 'not json' , headers: jsonHeaders});
 		expect(res.status).toBe(400);
 		expect(res.headers.get('Access-Control-Allow-Origin')).toBe(env.ALLOWED_ORIGIN);
 	});

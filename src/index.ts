@@ -33,6 +33,8 @@ async function handleContact(request: Request): Promise<Response> {
 	if (request.method !== 'POST') {
 		return methodNotAllowed('POST, OPTIONS');
 	}
+	const contentType = request.headers.get('Content-Type');
+	if (contentType === null || !contentType.startsWith('application/json')) return invalid();
 	let body: unknown;
 	try {
 		body = await request.json();
