@@ -14,7 +14,7 @@ function invalid(): Response {
 }
 
 function deliveryFailed(): Response {
-	return Response.json({ ok: false, error: 'delivery_failed'}, { status: 502} )
+	return Response.json({ ok: false, error: 'delivery_failed' }, { status: 502 });
 }
 
 function preflight(origin: string): Response {
@@ -49,10 +49,10 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
 	const contact = parseContact(body);
 	if (contact === null) return invalid();
 	try {
-        await sendMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, formatContact(contact));
+		await sendMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, formatContact(contact));
 	} catch (error) {
-			console.error(error);
-			return deliveryFailed();
+		console.error(error);
+		return deliveryFailed();
 	}
 	return Response.json({ ok: true });
 }
