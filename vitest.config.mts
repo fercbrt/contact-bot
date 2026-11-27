@@ -10,6 +10,7 @@ export default defineConfig({
 					TELEGRAM_BOT_TOKEN: 'test-token',
 					TELEGRAM_CHAT_ID: '123',
 					TEST_MIGRATIONS: await readD1Migrations('./migrations'),
+					IP_HASH_KEY: 'test-ip-key',
 				},
 			},
 		}),
