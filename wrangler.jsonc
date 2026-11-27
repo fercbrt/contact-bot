@@ -28,7 +28,16 @@
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
-	"vars": {  "ALLOWED_ORIGIN": "https://fercbrt.es" }
+	"vars": {
+		"ALLOWED_ORIGIN": "https://fercbrt.es"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "contact-bot-db",
+			"database_id": "5e7d79d3-77c9-49f8-809e-40442c288e7f"
+		}
+	]
 	/**
 	 * Static Assets
 	 * https://developers.cloudflare.com/workers/static-assets/binding/
